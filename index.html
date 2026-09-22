@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migraine Tracker Pro — Sistema de Monitoramento de Enxaqueca</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f5ff',
+                            100: '#e0ebff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        },
+                        pain: {
+                            free: '#22c55e',
+                            mild: '#eab308',
+                            moderate: '#f97316',
+                            severe: '#ef4444',
+                            extreme: '#18181b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full text-slate-800 antialiased font-sans selection:bg-brand-500 selection:text-white pb-12">
+
+<!-- Header Navbar -->
+<header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <!-- Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-blue-800 bg-clip-text text-transparent">
+                        Migraine Tracker <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200 ml-1">PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">Diário Clínico e Análise de Dores de Cabeça</p>
+                </div>
+            </div>
+
+            <!-- Sync Indicator & Quick Actions -->
+            <div class="flex items-center gap-3">
+                <div id="syncStatus" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="syncText">Salvamento Automático Ativo</span>
+                </div>
+
+                <button onclick="openModal('modalPainFree')" class="hidden md:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition">
+                    <i data-lucide="smile" class="w-4 h-4"></i>
+                    Dia Sem Dor
+                </button>
+
+                <button onclick="openModal('modalNewCrisis')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-md shadow-indigo-200 transition transform active:scale-95">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span>+ Nova Crise</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-slate-50 border-t border-slate-200/60 overflow-x-auto no-scrollbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-8">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active border-b-2 border-indigo-600 text-indigo-600 py-3 px-3 text-sm font-semibold flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+            </button>
+            <button onclick="switchTab('calendar')" id="tab-calendar" class="tab-btn border-b-2 border-transparent text-slate-600 hover:text-slate-900 py-3 px-3 text-sm font-semibold flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Calendário
+            </button>
+            <button onclick="switchTab('reports')" id="tab-reports" class="tab-btn border-b-2 border-transparent text-slate-600 hover:text-slate-900 py-3 px-3 text-sm font-semibold flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Relatórios & Estatísticas
+            </button>
+            <button onclick="switchTab('profile')" id="tab-profile" class="tab-btn border-b-2 border-transparent text-slate-600 hover:text-slate-900 py-3 px-3 text-sm font-semibold flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="user" class="w-4 h-4"></i> Perfil Médico
+            </button>
+        </div>
+    </nav>
+</header>
+
+<!-- Main Container -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+
+    <!-- DASHBOARD VIEW -->
+    <section id="view-dashboard" class="tab-content space-y-6">
+        
+        <!-- Action bar for Mobile -->
+        <div class="flex md:hidden justify-between gap-2">
+            <button onclick="openModal('modalPainFree')" class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-50 text-emerald-700 font-medium text-xs border border-emerald-200 flex items-center justify-center gap-1.5">
+                <i data-lucide="smile" class="w-4 h-4"></i> Dia Sem Dor
+            </button>
+            <button onclick="openModal('modalNewCrisis')" class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 text-white font-medium text-xs flex items-center justify-center gap-1.5 shadow">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Registrar Crise
+            </button>
+        </div>
+
+        <!-- 9 Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <!-- Card 1 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Crises este Mês</span>
+                    <i data-lucide="calendar-days" class="w-4 h-4 text-indigo-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statMonthCrises" class="text-2xl font-bold text-slate-900">0</span>
+                    <span id="statMonthCrisesBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">no mês</span>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Crises na Semana</span>
+                    <i data-lucide="clock-4" class="w-4 h-4 text-indigo-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statWeekCrises" class="text-2xl font-bold text-slate-900">0</span>
+                    <span class="text-xs text-slate-500">últimos 7d</span>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Dias Sem Dor</span>
+                    <i data-lucide="sun" class="w-4 h-4 text-amber-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statPainFreeDaysMonth" class="text-2xl font-bold text-emerald-600">0</span>
+                    <span class="text-xs text-slate-500">dias no mês</span>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Intensidade Média</span>
+                    <i data-lucide="gauge" class="w-4 h-4 text-rose-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statAvgIntensity" class="text-2xl font-bold text-slate-900">0.0</span>
+                    <span class="text-xs text-slate-400">/ 10</span>
+                </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Última Crise</span>
+                    <i data-lucide="history" class="w-4 h-4 text-indigo-500"></i>
+                </div>
+                <div class="text-sm font-bold text-slate-800 truncate" id="statLastCrisisDate">Nenhuma</div>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Remédios Usados</span>
+                    <i data-lucide="pill" class="w-4 h-4 text-blue-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statMedsCount" class="text-2xl font-bold text-slate-900">0</span>
+                    <span class="text-xs text-slate-500">doses</span>
+                </div>
+            </div>
+
+            <!-- Card 7 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Sequência Sem Dor</span>
+                    <i data-lucide="flame" class="w-4 h-4 text-emerald-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statStreak" class="text-2xl font-bold text-emerald-600">0</span>
+                    <span class="text-xs text-slate-500">dias seguidos</span>
+                </div>
+            </div>
+
+            <!-- Card 8 -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Média de Sono</span>
+                    <i data-lucide="moon" class="w-4 h-4 text-indigo-500"></i>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span id="statAvgSleep" class="text-2xl font-bold text-slate-900">0h</span>
+                    <span class="text-xs text-slate-500">/noite</span>
+                </div>
+            </div>
+
+            <!-- Card 9 -->
+            <div class="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 mb-2">
+                    <span class="text-xs font-medium">Principal Gatilho</span>
+                    <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                </div>
+                <div id="statTopTrigger" class="text-sm font-bold text-amber-700 truncate">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- AI Insights & Pattern Banner -->
+        <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-blue-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+                <i data-lucide="sparkles" class="w-64 h-64"></i>
+            </div>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 rounded-xl bg-white/10 backdrop-blur-md">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-indigo-300"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg">Inteligência & Análise de Padrões</h3>
+                    <p class="text-xs text-indigo-200">Insights automáticos identificados a partir do seu histórico de registros</p>
+                </div>
+            </div>
+            <div id="aiInsightsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <!-- Dynamic Insight cards inserted here -->
+            </div>
+        </div>
+
+        <!-- Charts Grid Preview -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Timeline chart -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 class="font-semibold text-slate-800">Evolução da Intensidade</h4>
+                        <p class="text-xs text-slate-500">Registros no histórico</p>
+                    </div>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">Escala 0-10</span>
+                </div>
+                <div class="h-64">
+                    <canvas id="dashboardTimelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Triggers chart -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h4 class="font-semibold text-slate-800">Gatilhos Mais Recorrentes</h4>
+                        <p class="text-xs text-slate-500">Fatores que mais desencadearam dores</p>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="dashboardTriggersChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Crises List -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h4 class="font-semibold text-slate-800">Últimos Registros</h4>
+                    <p class="text-xs text-slate-500">Histórico recente de crises e dias sem dor</p>
+                </div>
+                <button onclick="switchTab('calendar')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+                    Ver Calendário <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+            <div id="recentCrisesList" class="space-y-3">
+                <!-- Items populated dynamically -->
+            </div>
+        </div>
+
+    </section>
+
+    <!-- CALENDAR VIEW -->
+    <section id="view-calendar" class="tab-content hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <!-- Calendar Navigation -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <button id="btnPrevMonth" class="p-2 hover:bg-slate-100 rounded-xl transition border border-slate-200">
+                        <i data-lucide="chevron-left" class="w-5 h-5 text-slate-600"></i>
+                    </button>
+                    <h2 id="calendarMonthLabel" class="text-xl font-bold text-slate-900 min-w-[180px] text-center sm:text-left">
+                        Setembro 2026
+                    </h2>
+                    <button id="btnNextMonth" class="p-2 hover:bg-slate-100 rounded-xl transition border border-slate-200">
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-slate-600"></i>
+                    </button>
+                </div>
+
+                <!-- Color legend -->
+                <div class="flex flex-wrap items-center gap-3 text-xs">
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Sem Dor</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-400"></span> Leve (1-3)</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Moderada (4-6)</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-600"></span> Forte (7-8)</div>
+                    <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-900"></span> Severa (9-10)</div>
+                </div>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="grid grid-cols-7 gap-1 sm:gap-2 mb-2 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 text-sm">
+                <!-- Day cells populated via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- REPORTS VIEW -->
+    <section id="view-reports" class="tab-content hidden space-y-6">
+        
+        <!-- Header & Export Action -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">Relatório Clínico & Estatísticas Completa</h3>
+                <p class="text-xs text-slate-500">Dados consolidados para acompanhamento médico e tomadas de decisão</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="exportCSV()" class="px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 hover:bg-slate-50 flex items-center gap-1.5">
+                    <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+                </button>
+                <button onclick="printClinicalReport()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 flex items-center gap-1.5 shadow">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> Gerar PDF Médico
+                </button>
+            </div>
+        </div>
+
+        <!-- Frequency Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="text-xs text-slate-500 font-medium">Média Semanal de Crises</div>
+                <div id="statWeeklyAvg" class="text-2xl font-bold text-slate-900 mt-1">0.0</div>
+                <div class="text-xs text-slate-400 mt-1">Crises / semana no período</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="text-xs text-slate-500 font-medium">Média Mensal de Crises</div>
+                <div id="statMonthlyAvg" class="text-2xl font-bold text-slate-900 mt-1">0.0</div>
+                <div class="text-xs text-slate-400 mt-1">Crises / mês no histórico</div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div class="text-xs text-slate-500 font-medium">Duração Média das Crises</div>
+                <div id="statAvgDuration" class="text-2xl font-bold text-slate-900 mt-1">0h 0m</div>
+                <div class="text-xs text-slate-400 mt-1">Tempo médio por episódio</div>
+            </div>
+        </div>
+
+        <!-- Detailed Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Medication Efficacy Report -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <h4 class="font-semibold text-slate-800 mb-1">Eficácia dos Medicamentos de Resgate</h4>
+                <p class="text-xs text-slate-500 mb-4">Uso total e porcentagem de alívio efetivo</p>
+                <div id="medicationEfficacyList" class="space-y-3">
+                    <!-- Dynamic medication progress bars -->
+                </div>
+            </div>
+
+            <!-- Crisis Peak Hours Chart -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                <h4 class="font-semibold text-slate-800 mb-1">Horários mais Frequentes de Início</h4>
+                <p class="text-xs text-slate-500 mb-4">Distribuição das crises ao longo do dia</p>
+                <div class="h-64">
+                    <canvas id="reportHoursChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full Triggers Breakdown -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+            <h4 class="font-semibold text-slate-800 mb-1">Ranking Completo de Gatilhos Identificados</h4>
+            <p class="text-xs text-slate-500 mb-4">Fatores que antecederam o início da dor</p>
+            <div id="fullTriggersRanking" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <!-- Dynamically populated trigger ranking badges -->
+            </div>
+        </div>
+    </section>
+
+    <!-- PROFILE VIEW -->
+    <section id="view-profile" class="tab-content hidden space-y-6 max-w-4xl mx-auto">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+                <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl">
+                    <i data-lucide="user-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Perfil do Paciente</h3>
+                    <p class="text-xs text-slate-500">Dados pessoais e de saúde compartilhados com seu neurologista</p>
+                </div>
+            </div>
+
+            <form id="profileForm" onsubmit="saveProfile(event)" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo</label>
+                        <input type="text" id="profName" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ex: Maria Silva">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Idade</label>
+                        <input type="number" id="profAge" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ex: 34">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Sexo Biológico</label>
+                        <select id="profGender" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="Feminino">Feminino</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Outro">Outro / Preferir não informar</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Peso (kg) / Altura (cm)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="profWeight" placeholder="Peso (kg)" class="w-1/2 px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <input type="number" id="profHeight" placeholder="Altura (cm)" class="w-1/2 px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Diagnóstico Clínico</label>
+                        <input type="text" id="profDiagnosis" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ex: Enxaqueca Crônica com Aura">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Neurologista Responsável</label>
+                        <input type="text" id="profDoctor" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ex: Dra. Juliana Santos (CRM 12345)">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Medicamentos Preventivos Atuais</label>
+                    <textarea id="profMeds" rows="2" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Ex: Topiramato 50mg (1x ao dia pela manhã)"></textarea>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow transition">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Reminders / Notifications Preferences Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <h3 class="text-base font-bold text-slate-900 mb-2">Lembretes & Notificações</h3>
+            <p class="text-xs text-slate-500 mb-4">Mantenha a constância dos seus registros para melhores resultados médicos</p>
+
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">Lembrete de Registro Diário</p>
+                        <p class="text-xs text-slate-500">Aviso às 21:00 para registrar dores ou dia sem dor</p>
+                    </div>
+                    <input type="checkbox" checked class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                </div>
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/60">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">Lembrete do Medicamento Preventivo</p>
+                        <p class="text-xs text-slate-500">Notificação para tomar o remédio contínuo no horário</p>
+                    </div>
+                    <input type="checkbox" checked class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<!-- MODAL: NOVA CRISE -->
+<div id="modalNewCrisis" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden my-8 transform transition-all">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-slate-900 to-indigo-900 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i>
+                <h3 class="font-bold text-lg">Registrar Nova Crise</h3>
+            </div>
+            <button onclick="closeModal('modalNewCrisis')" class="p-1 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="crisisForm" onsubmit="saveCrisis(event)" class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+            
+            <!-- Section 1: Data e Horário -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="clock" class="w-4 h-4"></i> Data e Duração
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Data</label>
+                        <input type="date" id="cDate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Horário de Início</label>
+                        <input type="time" id="cStartTime" required onchange="calculateCrisisDuration()" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Horário de Término</label>
+                        <input type="time" id="cEndTime" onchange="calculateCrisisDuration()" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="bg-slate-50 px-3 py-2 rounded-xl text-xs text-slate-600 flex items-center justify-between border border-slate-200">
+                    <span>Duração Calculada:</span>
+                    <span id="cDurationCalculated" class="font-bold text-indigo-700">-- h -- min</span>
+                </div>
+            </div>
+
+            <!-- Section 2: Intensidade (Slider) -->
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="gauge" class="w-4 h-4"></i> Intensidade da Dor (0 a 10)
+                    </h4>
+                    <span id="cIntensityBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-rose-500 text-white">
+                        5 - Moderada
+                    </span>
+                </div>
+                <input type="range" id="cIntensity" min="0" max="10" value="5" oninput="updateIntensityBadge(this.value)" class="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                <div class="flex justify-between text-[10px] text-slate-400">
+                    <span>0 (Sem dor)</span>
+                    <span>5 (Moderada)</span>
+                    <span>10 (Insuportável)</span>
+                </div>
+            </div>
+
+            <!-- Section 3: Tipo da Dor & Localização -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Tipo da Dor</label>
+                    <div class="space-y-1.5 text-xs max-h-36 overflow-y-auto pr-1">
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cPainType" value="Pulsante" class="rounded text-indigo-600"> Pulsante</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cPainType" value="Pressão" class="rounded text-indigo-600"> Pressão</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cPainType" value="Latejante" class="rounded text-indigo-600"> Latejante</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cPainType" value="Pontada" class="rounded text-indigo-600"> Pontada</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cPainType" value="Queimação" class="rounded text-indigo-600"> Queimação</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cPainType" value="Peso na cabeça" class="rounded text-indigo-600"> Peso na cabeça</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Localização</label>
+                    <div class="space-y-1.5 text-xs max-h-36 overflow-y-auto pr-1">
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Testa" class="rounded text-indigo-600"> Testa</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Têmpora esquerda" class="rounded text-indigo-600"> Têmpora esquerda</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Têmpora direita" class="rounded text-indigo-600"> Têmpora direita</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Atrás dos olhos" class="rounded text-indigo-600"> Atrás dos olhos</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Nuca" class="rounded text-indigo-600"> Nuca</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Topo da cabeça" class="rounded text-indigo-600"> Topo da cabeça</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Lado esquerdo" class="rounded text-indigo-600"> Lado esquerdo</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Lado direito" class="rounded text-indigo-600"> Lado direito</label>
+                        <label class="flex items-center gap-2"><input type="checkbox" name="cLocation" value="Cabeça inteira" class="rounded text-indigo-600"> Cabeça inteira</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Sintomas Associados -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider">Sintomas Associados</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Náusea" class="rounded text-indigo-600"> Náusea</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Vômito" class="rounded text-indigo-600"> Vômito</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Sensibilidade à luz" class="rounded text-indigo-600"> Sensib. Luz (Fotofobia)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Sensibilidade ao som" class="rounded text-indigo-600"> Sensib. Som (Fonofobia)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Sensibilidade a cheiros" class="rounded text-indigo-600"> Sensib. Cheiros (Osmofobia)</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Tontura" class="rounded text-indigo-600"> Tontura</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Aura visual" class="rounded text-indigo-600"> Aura visual</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Formigamento" class="rounded text-indigo-600"> Formigamento</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Visão embaçada" class="rounded text-indigo-600"> Visão embaçada</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Dor cervical" class="rounded text-indigo-600"> Dor cervical</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Fadiga" class="rounded text-indigo-600"> Fadiga</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" name="cSymptoms" value="Dificuldade de concentração" class="rounded text-indigo-600"> Dif. Concentração</label>
+                </div>
+            </div>
+
+            <!-- Section 5: Medicamentos Preventivos -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800">Tomou medicamento preventivo hoje?</span>
+                    <select id="cPreventiveTook" onchange="togglePreventiveFields()" class="px-3 py-1 rounded-lg border text-xs bg-white font-medium">
+                        <option value="Não">Não</option>
+                        <option value="Sim">Sim</option>
+                    </select>
+                </div>
+
+                <div id="preventiveFields" class="hidden space-y-3 pt-2 border-t border-slate-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div>
+                            <label class="block font-medium mb-1">Medicamento</label>
+                            <select id="cPrevMed" class="w-full p-2 border rounded-lg bg-white">
+                                <option value="Topiramato">Topiramato</option>
+                                <option value="Amitriptilina">Amitriptilina</option>
+                                <option value="Propranolol">Propranolol</option>
+                                <option value="Emgality">Emgality</option>
+                                <option value="Ajovy">Ajovy</option>
+                                <option value="Vyepti">Vyepti</option>
+                                <option value="Qulipta">Qulipta</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Dosagem</label>
+                            <input type="text" id="cPrevDose" placeholder="Ex: 50mg" class="w-full p-2 border rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Horário</label>
+                            <input type="time" id="cPrevTime" class="w-full p-2 border rounded-lg bg-white">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6: Medicamentos de Resgate -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800">Tomou remédio para aliviar a dor?</span>
+                    <select id="cRescueTook" onchange="toggleRescueFields()" class="px-3 py-1 rounded-lg border text-xs bg-white font-medium">
+                        <option value="Não">Não</option>
+                        <option value="Sim">Sim</option>
+                    </select>
+                </div>
+
+                <div id="rescueFields" class="hidden space-y-3 pt-2 border-t border-slate-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div>
+                            <label class="block font-medium mb-1">Medicamento</label>
+                            <select id="cRescueMed" class="w-full p-2 border rounded-lg bg-white">
+                                <option value="Sumax Pro">Sumax Pro</option>
+                                <option value="Naratriptana">Naratriptana</option>
+                                <option value="Rizatriptana">Rizatriptana</option>
+                                <option value="Ibuprofeno">Ibuprofeno</option>
+                                <option value="Dipirona">Dipirona</option>
+                                <option value="Paracetamol">Paracetamol</option>
+                                <option value="Cetoprofeno">Cetoprofeno</option>
+                                <option value="Naproxeno">Naproxeno</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Dosagem</label>
+                            <input type="text" id="cRescueDose" placeholder="Ex: 500mg" class="w-full p-2 border rounded-lg bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-medium mb-1">Horário</label>
+                            <input type="time" id="cRescueTime" class="w-full p-2 border rounded-lg bg-white">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Resultado após uso</label>
+                        <select id="cRescueResult" class="w-full p-2 border rounded-lg bg-white text-xs">
+                            <option value="Não funcionou">Não funcionou</option>
+                            <option value="Melhorou pouco">Melhorou pouco</option>
+                            <option value="Melhorou parcialmente">Melhorou parcialmente</option>
+                            <option value="Melhorou muito">Melhorou muito</option>
+                            <option value="Eliminou a dor">Eliminou a dor</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 7: Gatilhos -->
+            <div class="space-y-2">
+                <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider">Possíveis Gatilhos</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Chocolate" class="rounded text-indigo-600"> Chocolate</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Queijo" class="rounded text-indigo-600"> Queijo</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Álcool" class="rounded text-indigo-600"> Álcool</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Café em excesso" class="rounded text-indigo-600"> Café em excesso</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Jejum prolongado" class="rounded text-indigo-600"> Jejum prolongado</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Dormi pouco" class="rounded text-indigo-600"> Dormi pouco</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Muito estresse" class="rounded text-indigo-600"> Muito estresse</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Ansiedade" class="rounded text-indigo-600"> Ansiedade</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Sol forte" class="rounded text-indigo-600"> Sol forte</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Calor excessivo" class="rounded text-indigo-600"> Calor excessivo</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Cheiro forte" class="rounded text-indigo-600"> Cheiro forte</label>
+                    <label class="flex items-center gap-1.5"><input type="checkbox" name="cTriggers" value="Menstruação" class="rounded text-indigo-600"> Menstruação / TPM</label>
+                </div>
+            </div>
+
+            <!-- Section 8: Hábitos do Dia -->
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+                <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider">Hábitos do Dia</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <label class="block text-[11px] text-slate-600 mb-1">Horas Dormidas</label>
+                        <input type="number" step="0.5" id="cSleep" placeholder="Ex: 7.5" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-600 mb-1">Água (Litros)</label>
+                        <input type="number" step="0.1" id="cWater" placeholder="Ex: 2.0" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-600 mb-1">Cafeína (Xícaras)</label>
+                        <input type="number" id="cCaffeine" placeholder="Ex: 2" class="w-full p-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-600 mb-1">Fez Exercício?</label>
+                        <select id="cExercise" class="w-full p-2 border rounded-lg">
+                            <option value="Não">Não</option>
+                            <option value="Caminhada">Caminhada</option>
+                            <option value="Corrida">Corrida</option>
+                            <option value="Musculação">Musculação</option>
+                            <option value="Yoga">Yoga</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="pt-4 border-t border-slate-200 flex justify-end gap-3">
+                <button type="button" onclick="closeModal('modalNewCrisis')" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow">
+                    Salvar Registros
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: REGISTRAR DIA SEM DOR -->
+<div id="modalPainFree" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+        <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="smile" class="w-5 h-5"></i>
+                <h3 class="font-bold text-lg">Registrar Dia Sem Dor</h3>
+            </div>
+            <button onclick="closeModal('modalPainFree')" class="p-1 hover:bg-white/10 rounded-lg text-slate-100">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="painFreeForm" onsubmit="savePainFree(event)" class="p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Data</label>
+                <input type="date" id="pfDate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                    <label class="block font-medium mb-1">Dormiu bem?</label>
+                    <select id="pfSleepWell" class="w-full p-2 border rounded-xl">
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                        <option value="Razoável">Razoável</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Horas de Sono</label>
+                    <input type="number" step="0.5" id="pfSleepHours" placeholder="8" class="w-full p-2 border rounded-xl">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Tomou Preventivo?</label>
+                    <select id="pfPreventive" class="w-full p-2 border rounded-xl">
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Fez Exercício?</label>
+                    <select id="pfExercise" class="w-full p-2 border rounded-xl">
+                        <option value="Sim">Sim</option>
+                        <option value="Não">Não</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Nível de Estresse</label>
+                    <select id="pfStress" class="w-full p-2 border rounded-xl">
+                        <option value="Baixo">Baixo</option>
+                        <option value="Moderado">Moderado</option>
+                        <option value="Alto">Alto</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Água (Litros)</label>
+                    <input type="number" step="0.5" id="pfWater" placeholder="2.0" class="w-full p-2 border rounded-xl">
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                <button type="button" onclick="closeModal('modalPainFree')" class="px-4 py-2 rounded-xl border text-sm font-medium">Cancelar</button>
+                <button type="submit" class="px-5 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow">Salvar Dia Sem Dor</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: DETALHES DO DIA -->
+<div id="modalDayDetail" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+            <h3 id="dayDetailTitle" class="font-bold text-lg">Detalhes do Registro</h3>
+            <button onclick="closeModal('modalDayDetail')" class="p-1 hover:bg-white/10 rounded-lg text-slate-300">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div id="dayDetailBody" class="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-sm">
+            <!-- Dynamic content loaded here -->
+        </div>
+        <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+            <button id="btnDeleteDetail" onclick="deleteCurrentDetail()" class="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Excluir Registro
+            </button>
+            <button onclick="closeModal('modalDayDetail')" class="px-4 py-1.5 rounded-lg bg-slate-200 text-slate-700 font-semibold text-xs">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Feedback -->
+<div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+    <span id="toastMessage" class="text-sm font-medium">Operação realizada com sucesso!</span>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Global App State
+window.appState = {
+    crises: [],
+    painFreeDays: [],
+    profile: {
+        name: 'Maria Silva',
+        age: 34,
+        gender: 'Feminino',
+        weight: 62,
+        height: 165,
+        diagnosis: 'Enxaqueca Crônica',
+        doctor: 'Dra. Juliana Santos',
+        meds: 'Topiramato 50mg'
+    },
+    currentCalendarDate: new Date(2026, 8, 1),
+    activeDetailId: null,
+    activeDetailType: null
+};
+
+// INITIAL SEED DATA (Used only on very first launch if no local data exists)
+const INITIAL_CRISES = [
+    {
+        id: 'c-init-1',
+        date: '2026-09-02',
+        startTime: '08:30',
+        endTime: '15:00',
+        durationMinutes: 390,
+        intensity: 8,
+        painTypes: ['Latejante', 'Pulsante'],
+        locations: ['Têmpora esquerda', 'Atrás dos olhos'],
+        symptoms: ['Náusea', 'Sensibilidade à luz', 'Sensibilidade ao som'],
+        preventiveTook: 'Sim',
+        preventiveMed: 'Topiramato',
+        preventiveDose: '50mg',
+        rescueTook: 'Sim',
+        rescueMed: 'Sumax Pro',
+        rescueDose: '50mg',
+        rescueTime: '09:00',
+        rescueResult: 'Melhorou muito',
+        triggers: ['Dormi pouco', 'Muito estresse'],
+        sleepHours: 5.5,
+        waterLitres: 1.2,
+        caffeineCups: 3,
+        exercise: 'Não'
+    },
+    {
+        id: 'c-init-2',
+        date: '2026-09-08',
+        startTime: '14:10',
+        endTime: '18:40',
+        durationMinutes: 270,
+        intensity: 6,
+        painTypes: ['Pressão'],
+        locations: ['Nuca', 'Topo da cabeça'],
+        symptoms: ['Dor cervical', 'Fadiga'],
+        preventiveTook: 'Sim',
+        preventiveMed: 'Topiramato',
+        rescueTook: 'Sim',
+        rescueMed: 'Dipirona',
+        rescueDose: '1g',
+        rescueResult: 'Melhorou parcialmente',
+        triggers: ['Café em excesso', 'Jejum prolongado'],
+        sleepHours: 6.0,
+        waterLitres: 1.5,
+        caffeineCups: 4,
+        exercise: 'Não'
+    },
+    {
+        id: 'c-init-3',
+        date: '2026-09-15',
+        startTime: '07:00',
+        endTime: '12:30',
+        durationMinutes: 330,
+        intensity: 9,
+        painTypes: ['Pulsante', 'Pontada'],
+        locations: ['Têmpora direita', 'Cabeça inteira'],
+        symptoms: ['Náusea', 'Vômito', 'Aura visual', 'Sensibilidade à luz'],
+        preventiveTook: 'Sim',
+        rescueTook: 'Sim',
+        rescueMed: 'Sumax Pro',
+        rescueDose: '50mg',
+        rescueResult: 'Eliminou a dor',
+        triggers: ['Dormi pouco', 'Menstruação'],
+        sleepHours: 5.0,
+        waterLitres: 1.0,
+        caffeineCups: 1,
+        exercise: 'Não'
+    }
+];
+
+const INITIAL_PAIN_FREE = [
+    { id: 'pf-init-1', date: '2026-09-01', sleepHours: 8, sleepWell: 'Sim', preventive: 'Sim', exercise: 'Sim', stress: 'Baixo', water: 2.5 },
+    { id: 'pf-init-2', date: '2026-09-03', sleepHours: 7.5, sleepWell: 'Sim', preventive: 'Sim', exercise: 'Não', stress: 'Baixo', water: 2.0 },
+    { id: 'pf-init-3', date: '2026-09-04', sleepHours: 8.0, sleepWell: 'Sim', preventive: 'Sim', exercise: 'Caminhada', stress: 'Baixo', water: 2.2 }
+];
+
+// LocalStorage Management
+function loadPersistentData() {
+    const savedCrises = localStorage.getItem('migraine_crises');
+    const savedPainFree = localStorage.getItem('migraine_pain_free');
+    const savedProfile = localStorage.getItem('migraine_profile');
+
+    if (savedCrises !== null) {
+        window.appState.crises = JSON.parse(savedCrises);
+    } else {
+        window.appState.crises = [...INITIAL_CRISES];
+        savePersistentData();
+    }
+
+    if (savedPainFree !== null) {
+        window.appState.painFreeDays = JSON.parse(savedPainFree);
+    } else {
+        window.appState.painFreeDays = [...INITIAL_PAIN_FREE];
+        savePersistentData();
+    }
+
+    if (savedProfile !== null) {
+        window.appState.profile = JSON.parse(savedProfile);
+    } else {
+        savePersistentData();
+    }
+
+    populateProfileFields();
+}
+
+function savePersistentData() {
+    localStorage.setItem('migraine_crises', JSON.stringify(window.appState.crises));
+    localStorage.setItem('migraine_pain_free', JSON.stringify(window.appState.painFreeDays));
+    localStorage.setItem('migraine_profile', JSON.stringify(window.appState.profile));
+}
+
+function populateProfileFields() {
+    const p = window.appState.profile;
+    if (!p) return;
+    if (document.getElementById('profName')) document.getElementById('profName').value = p.name || '';
+    if (document.getElementById('profAge')) document.getElementById('profAge').value = p.age || '';
+    if (document.getElementById('profGender')) document.getElementById('profGender').value = p.gender || 'Feminino';
+    if (document.getElementById('profWeight')) document.getElementById('profWeight').value = p.weight || '';
+    if (document.getElementById('profHeight')) document.getElementById('profHeight').value = p.height || '';
+    if (document.getElementById('profDiagnosis')) document.getElementById('profDiagnosis').value = p.diagnosis || '';
+    if (document.getElementById('profDoctor')) document.getElementById('profDoctor').value = p.doctor || '';
+    if (document.getElementById('profMeds')) document.getElementById('profMeds').value = p.meds || '';
+}
+
+// Chart References
+let dashboardTimelineChart = null;
+let dashboardTriggersChart = null;
+let reportHoursChart = null;
+
+// On Page Load
+window.onload = function() {
+    lucide.createIcons();
+    initTodayDates();
+    
+    // Load from Local Storage
+    loadPersistentData();
+
+    // Initial Render
+    renderAllViews();
+};
+
+function initTodayDates() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('cDate').value = todayStr;
+    document.getElementById('pfDate').value = todayStr;
+}
+
+function renderAllViews() {
+    updateDashboardMetrics();
+    generateAIInsights();
+    renderDashboardCharts();
+    renderRecentCrisesList();
+    renderCalendar();
+    renderReports();
+    lucide.createIcons();
+}
+
+function updateDashboardMetrics() {
+    const crises = window.appState.crises;
+    const painFree = window.appState.painFreeDays;
+
+    const currentMonthStr = "2026-09";
+
+    const monthCrises = crises.filter(c => c.date.startsWith(currentMonthStr));
+    document.getElementById('statMonthCrises').innerText = monthCrises.length;
+
+    // Week Crises
+    document.getElementById('statWeekCrises').innerText = crises.slice(0, 3).length;
+
+    // Pain Free Days
+    const monthPainFree = painFree.filter(p => p.date.startsWith(currentMonthStr));
+    document.getElementById('statPainFreeDaysMonth').innerText = monthPainFree.length;
+
+    // Average Intensity
+    if (crises.length > 0) {
+        const avg = crises.reduce((acc, curr) => acc + Number(curr.intensity), 0) / crises.length;
+        document.getElementById('statAvgIntensity').innerText = avg.toFixed(1);
+    } else {
+        document.getElementById('statAvgIntensity').innerText = "0.0";
+    }
+
+    // Last Crisis Date
+    if (crises.length > 0) {
+        const sorted = [...crises].sort((a, b) => b.date.localeCompare(a.date));
+        const last = sorted[0];
+        const [y, m, d] = last.date.split('-');
+        document.getElementById('statLastCrisisDate').innerText = `${d}/${m}/${y}`;
+    } else {
+        document.getElementById('statLastCrisisDate').innerText = "Nenhuma";
+    }
+
+    // Rescue Meds Count
+    const totalMeds = crises.filter(c => c.rescueTook === 'Sim').length;
+    document.getElementById('statMedsCount').innerText = totalMeds;
+
+    // Consecutive Days Streak
+    document.getElementById('statStreak').innerText = painFree.length > 0 ? painFree.length : "0";
+
+    // Average Sleep
+    const allSleep = [...crises.map(c => Number(c.sleepHours || 0)), ...painFree.map(p => Number(p.sleepHours || 0))].filter(s => s > 0);
+    if (allSleep.length > 0) {
+        const avgSleep = allSleep.reduce((a, b) => a + b, 0) / allSleep.length;
+        document.getElementById('statAvgSleep').innerText = avgSleep.toFixed(1) + 'h';
+    } else {
+        document.getElementById('statAvgSleep').innerText = "0h";
+    }
+
+    // Top Trigger
+    const triggerCounts = {};
+    crises.forEach(c => {
+        (c.triggers || []).forEach(t => {
+            triggerCounts[t] = (triggerCounts[t] || 0) + 1;
+        });
+    });
+    const sortedTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]);
+    document.getElementById('statTopTrigger').innerText = sortedTriggers.length > 0 ? sortedTriggers[0][0] : 'Nenhum registrado';
+}
+
+function generateAIInsights() {
+    const container = document.getElementById('aiInsightsContainer');
+    container.innerHTML = '';
+
+    const crises = window.appState.crises;
+    const insights = [];
+
+    const lowSleepCrises = crises.filter(c => Number(c.sleepHours) < 6.5);
+    if (crises.length > 0 && lowSleepCrises.length > 0) {
+        const pct = Math.round((lowSleepCrises.length / crises.length) * 100);
+        insights.push({
+            icon: 'moon',
+            text: `<b>${pct}% das suas crises</b> ocorreram após noites de sono inferiores a 6.5 horas.`
+        });
+    }
+
+    const sumaxCrises = crises.filter(c => c.rescueMed === 'Sumax Pro');
+    if (sumaxCrises.length > 0) {
+        const effective = sumaxCrises.filter(c => c.rescueResult === 'Eliminou a dor' || c.rescueResult === 'Melhorou muito').length;
+        const pct = Math.round((effective / sumaxCrises.length) * 100);
+        insights.push({
+            icon: 'pill',
+            text: `O medicamento <b>Sumax Pro</b> apresentou eficácia significativa em <b>${pct}%</b> dos episódios.`
+        });
+    }
+
+    insights.push({
+        icon: 'alert-triangle',
+        text: `Fatores desencadeadores frequentes e histórico de hábitos influenciam diretamente as alterações de dor.`
+    });
+
+    insights.push({
+        icon: 'shield-check',
+        text: `Em dias com boa hidratação e sono regular, o relato de dias sem dor é consideravelmente maior.`
+    });
+
+    insights.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'bg-white/10 backdrop-blur-md p-3 rounded-xl flex items-start gap-2.5 border border-white/10';
+        card.innerHTML = `
+            <i data-lucide="${item.icon}" class="w-4 h-4 text-indigo-300 shrink-0 mt-0.5"></i>
+            <span class="text-xs text-indigo-100">${item.text}</span>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function renderDashboardCharts() {
+    const crises = [...window.appState.crises].sort((a, b) => a.date.localeCompare(b.date));
+
+    // Timeline Chart
+    const ctxTimeline = document.getElementById('dashboardTimelineChart')?.getContext('2d');
+    if (ctxTimeline) {
+        if (dashboardTimelineChart) dashboardTimelineChart.destroy();
+
+        dashboardTimelineChart = new Chart(ctxTimeline, {
+            type: 'line',
+            data: {
+                labels: crises.map(c => {
+                    const [, m, d] = c.date.split('-');
+                    return `${d}/${m}`;
+                }),
+                datasets: [{
+                    label: 'Intensidade da Dor',
+                    data: crises.map(c => c.intensity),
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointBackgroundColor: '#2563eb',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { min: 0, max: 10, ticks: { stepSize: 2 } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // Triggers Chart
+    const ctxTriggers = document.getElementById('dashboardTriggersChart')?.getContext('2d');
+    if (ctxTriggers) {
+        if (dashboardTriggersChart) dashboardTriggersChart.destroy();
+
+        const triggerCounts = {};
+        crises.forEach(c => {
+            (c.triggers || []).forEach(t => triggerCounts[t] = (triggerCounts[t] || 0) + 1);
+        });
+
+        const labels = Object.keys(triggerCounts);
+        const data = Object.values(triggerCounts);
+
+        dashboardTriggersChart = new Chart(ctxTriggers, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ocorrências',
+                    data: data,
+                    backgroundColor: '#f97316',
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+}
+
+function renderRecentCrisesList() {
+    const list = document.getElementById('recentCrisesList');
+    list.innerHTML = '';
+
+    const allRecords = [
+        ...window.appState.crises.map(c => ({ ...c, type: 'crisis' })),
+        ...window.appState.painFreeDays.map(p => ({ ...p, type: 'painFree' }))
+    ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+
+    if (allRecords.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">Nenhum registro encontrado. Adicione uma nova crise ou um dia sem dor!</p>`;
+        return;
+    }
+
+    allRecords.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-100/80 transition flex items-center justify-between cursor-pointer';
+        div.onclick = () => showDayDetail(item.id, item.type);
+
+        const [y, m, d] = item.date.split('-');
+        const dateFormatted = `${d}/${m}/${y}`;
+
+        if (item.type === 'crisis') {
+            const intensityColor = item.intensity >= 8 ? 'bg-rose-500' : item.intensity >= 5 ? 'bg-orange-500' : 'bg-amber-400';
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full ${intensityColor}"></span>
+                    <div>
+                        <div class="font-semibold text-slate-800 text-sm">Crise de Enxaqueca — Intensidade ${item.intensity}/10</div>
+                        <div class="text-xs text-slate-500">${dateFormatted} às ${item.startTime || '--:--'} (${item.durationMinutes ? Math.floor(item.durationMinutes/60) + 'h ' + (item.durationMinutes%60) + 'm' : ''})</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs px-2.5 py-1 rounded-lg bg-white border font-medium text-slate-600">${item.rescueMed || 'Sem med.'}</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                </div>
+            `;
+        } else {
+            div.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                    <div>
+                        <div class="font-semibold text-emerald-800 text-sm">Dia Sem Dor 🟢</div>
+                        <div class="text-xs text-slate-500">${dateFormatted} — ${item.sleepHours || 8}h de sono</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-medium">Saudável</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                </div>
+            `;
+        }
+        list.appendChild(div);
+    });
+}
+
+function renderCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const currentDate = window.appState.currentCalendarDate;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    document.getElementById('calendarMonthLabel').innerText = `${monthNames[month]} ${year}`;
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDayIndex; i++) {
+        const blank = document.createElement('div');
+        blank.className = 'h-16 sm:h-20 bg-slate-50/50 rounded-xl border border-transparent';
+        grid.appendChild(blank);
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+        const dayFormatted = day < 10 ? `0${day}` : `${day}`;
+        const monthFormatted = (month + 1) < 10 ? `0${month + 1}` : `${month + 1}`;
+        const dateStr = `${year}-${monthFormatted}-${dayFormatted}`;
+
+        const crisis = window.appState.crises.find(c => c.date === dateStr);
+        const painFree = window.appState.painFreeDays.find(p => p.date === dateStr);
+
+        const cell = document.createElement('div');
+        cell.className = 'h-16 sm:h-20 p-1.5 rounded-xl border border-slate-200/80 bg-white flex flex-col justify-between hover:border-indigo-500 transition cursor-pointer relative';
+
+        let badge = '';
+        if (crisis) {
+            const int = Number(crisis.intensity);
+            let colorBg = 'bg-amber-400 text-slate-900';
+            if (int >= 9) colorBg = 'bg-slate-900 text-white';
+            else if (int >= 7) colorBg = 'bg-rose-600 text-white';
+            else if (int >= 4) colorBg = 'bg-orange-500 text-white';
+
+            badge = `<div class="mt-1 px-1.5 py-0.5 rounded-md ${colorBg} text-[10px] font-bold text-center truncate">Dor ${int}/10</div>`;
+            cell.onclick = () => showDayDetail(crisis.id, 'crisis');
+        } else if (painFree) {
+            badge = `<div class="mt-1 px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold text-center">Sem Dor</div>`;
+            cell.onclick = () => showDayDetail(painFree.id, 'painFree');
+        } else {
+            cell.onclick = () => {
+                document.getElementById('cDate').value = dateStr;
+                openModal('modalNewCrisis');
+            };
+        }
+
+        cell.innerHTML = `
+            <span class="text-xs font-semibold text-slate-700">${day}</span>
+            ${badge}
+        `;
+        grid.appendChild(cell);
+    }
+}
+
+// Calendar Navigation
+document.getElementById('btnPrevMonth')?.addEventListener('click', () => {
+    window.appState.currentCalendarDate.setMonth(window.appState.currentCalendarDate.getMonth() - 1);
+    renderCalendar();
+});
+
+document.getElementById('btnNextMonth')?.addEventListener('click', () => {
+    window.appState.currentCalendarDate.setMonth(window.appState.currentCalendarDate.getMonth() + 1);
+    renderCalendar();
+});
+
+function renderReports() {
+    const crises = window.appState.crises;
+
+    const totalWeeks = 4;
+    document.getElementById('statWeeklyAvg').innerText = (crises.length / totalWeeks).toFixed(1);
+    document.getElementById('statMonthlyAvg').innerText = crises.length.toFixed(1);
+
+    const totalDuration = crises.reduce((acc, c) => acc + (Number(c.durationMinutes) || 0), 0);
+    if (crises.length > 0 && totalDuration > 0) {
+        const avgMin = Math.round(totalDuration / crises.length);
+        const hrs = Math.floor(avgMin / 60);
+        const mins = avgMin % 60;
+        document.getElementById('statAvgDuration').innerText = `${hrs}h ${mins}m`;
+    }
+
+    const medContainer = document.getElementById('medicationEfficacyList');
+    medContainer.innerHTML = '';
+
+    const medStats = {};
+    crises.forEach(c => {
+        if (c.rescueTook === 'Sim' && c.rescueMed) {
+            if (!medStats[c.rescueMed]) medStats[c.rescueMed] = { count: 0, effective: 0 };
+            medStats[c.rescueMed].count++;
+            if (c.rescueResult === 'Eliminou a dor' || c.rescueResult === 'Melhorou muito') {
+                medStats[c.rescueMed].effective++;
+            }
+        }
+    });
+
+    Object.entries(medStats).forEach(([medName, data]) => {
+        const pct = Math.round((data.effective / data.count) * 100);
+        const div = document.createElement('div');
+        div.className = 'p-3 bg-slate-50 rounded-xl border border-slate-200';
+        div.innerHTML = `
+            <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-bold text-slate-800">${medName}</span>
+                <span class="font-semibold text-slate-600">${data.count}x utilizado — <b>${pct}% de eficácia</b></span>
+            </div>
+            <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-600 rounded-full" style="width: ${pct}%"></div>
+            </div>
+        `;
+        medContainer.appendChild(div);
+    });
+
+    const ctxHours = document.getElementById('reportHoursChart')?.getContext('2d');
+    if (ctxHours) {
+        if (reportHoursChart) reportHoursChart.destroy();
+
+        const hourSlots = { 'Madrugada (00h-06h)': 0, 'Manhã (06h-12h)': 0, 'Tarde (12h-18h)': 0, 'Noite (18h-24h)': 0 };
+        crises.forEach(c => {
+            if (c.startTime) {
+                const hour = parseInt(c.startTime.split(':')[0]);
+                if (hour >= 0 && hour < 6) hourSlots['Madrugada (00h-06h)']++;
+                else if (hour >= 6 && hour < 12) hourSlots['Manhã (06h-12h)']++;
+                else if (hour >= 12 && hour < 18) hourSlots['Tarde (12h-18h)']++;
+                else hourSlots['Noite (18h-24h)']++;
+            }
+        });
+
+        reportHoursChart = new Chart(ctxHours, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(hourSlots),
+                datasets: [{
+                    data: Object.values(hourSlots),
+                    backgroundColor: ['#6366f1', '#3b82f6', '#f97316', '#1e1b4b']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    const triggerContainer = document.getElementById('fullTriggersRanking');
+    triggerContainer.innerHTML = '';
+    const triggerCounts = {};
+    crises.forEach(c => (c.triggers || []).forEach(t => triggerCounts[t] = (triggerCounts[t] || 0) + 1));
+
+    Object.entries(triggerCounts).sort((a,b) => b[1] - a[1]).forEach(([trigger, count], idx) => {
+        const item = document.createElement('div');
+        item.className = 'p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-center justify-between text-xs';
+        item.innerHTML = `
+            <span class="font-semibold text-amber-900">${idx + 1}. ${trigger}</span>
+            <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-800 font-bold">${count} crises</span>
+        `;
+        triggerContainer.appendChild(item);
+    });
+}
+
+window.showDayDetail = function(id, type) {
+    window.appState.activeDetailId = id;
+    window.appState.activeDetailType = type;
+
+    const body = document.getElementById('dayDetailBody');
+    body.innerHTML = '';
+
+    if (type === 'crisis') {
+        const c = window.appState.crises.find(item => item.id === id);
+        if (!c) return;
+
+        document.getElementById('dayDetailTitle').innerText = `Crise — ${c.date}`;
+        body.innerHTML = `
+            <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border">
+                <div><span class="text-slate-500 text-xs block">Intensidade:</span> <b class="text-rose-600 font-bold">${c.intensity}/10</b></div>
+                <div><span class="text-slate-500 text-xs block">Horário:</span> <b>${c.startTime || '--'} até ${c.endTime || '--'}</b></div>
+                <div><span class="text-slate-500 text-xs block">Duração:</span> <b>${c.durationMinutes ? Math.floor(c.durationMinutes/60) + 'h ' + (c.durationMinutes%60) + 'm' : '--'}</b></div>
+                <div><span class="text-slate-500 text-xs block">Remédio Resgate:</span> <b>${c.rescueMed || 'Nenhum'}</b></div>
+            </div>
+
+            <div>
+                <b class="text-xs uppercase text-slate-500 block mb-1">Tipo da Dor</b>
+                <div class="flex flex-wrap gap-1">${(c.painTypes || []).map(t => `<span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-xs font-medium border border-indigo-100">${t}</span>`).join('')}</div>
+            </div>
+
+            <div>
+                <b class="text-xs uppercase text-slate-500 block mb-1">Localização</b>
+                <div class="flex flex-wrap gap-1">${(c.locations || []).map(l => `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">${l}</span>`).join('')}</div>
+            </div>
+
+            <div>
+                <b class="text-xs uppercase text-slate-500 block mb-1">Sintomas Associados</b>
+                <div class="flex flex-wrap gap-1">${(c.symptoms || []).map(s => `<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 text-xs font-medium border border-rose-100">${s}</span>`).join('')}</div>
+            </div>
+
+            <div>
+                <b class="text-xs uppercase text-slate-500 block mb-1">Gatilhos Identificados</b>
+                <div class="flex flex-wrap gap-1">${(c.triggers || []).map(tg => `<span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-xs font-medium border border-amber-200">${tg}</span>`).join('')}</div>
+            </div>
+
+            <div class="text-xs text-slate-600 bg-indigo-50/50 p-3 rounded-xl">
+                <b>Eficácia do Medicamento:</b> ${c.rescueResult || 'Não informado'}
+            </div>
+        `;
+    } else {
+        const p = window.appState.painFreeDays.find(item => item.id === id);
+        if (!p) return;
+
+        document.getElementById('dayDetailTitle').innerText = `Dia Sem Dor — ${p.date}`;
+        body.innerHTML = `
+            <div class="space-y-2 bg-emerald-50 p-4 rounded-xl border border-emerald-200 text-emerald-900">
+                <p><b>Horas de Sono:</b> ${p.sleepHours || 8} horas (${p.sleepWell === 'Sim' ? 'Sono reparador' : 'Sono irregular'})</p>
+                <p><b>Preventivo tomado?</b> ${p.preventive || 'Sim'}</p>
+                <p><b>Praticou Exercícios?</b> ${p.exercise || 'Sim'}</p>
+                <p><b>Nível de Estresse:</b> ${p.stress || 'Baixo'}</p>
+                <p><b>Consumo de Água:</b> ${p.water || 2.0} Litros</p>
+            </div>
+        `;
+    }
+
+    openModal('modalDayDetail');
+};
+
+window.deleteCurrentDetail = function() {
+    const id = window.appState.activeDetailId;
+    const type = window.appState.activeDetailType;
+
+    if (!id) return;
+
+    if (type === 'crisis') {
+        window.appState.crises = window.appState.crises.filter(c => c.id !== id);
+    } else {
+        window.appState.painFreeDays = window.appState.painFreeDays.filter(p => p.id !== id);
+    }
+
+    savePersistentData();
+    closeModal('modalDayDetail');
+    renderAllViews();
+    showToast("Registro excluído com sucesso!");
+};
+
+// Form Save Handlers
+window.saveCrisis = function(e) {
+    e.preventDefault();
+
+    const date = document.getElementById('cDate').value;
+    const startTime = document.getElementById('cStartTime').value;
+    const endTime = document.getElementById('cEndTime').value;
+    const intensity = document.getElementById('cIntensity').value;
+
+    const getChecked = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+
+    const painTypes = getChecked('cPainType');
+    const locations = getChecked('cLocation');
+    const symptoms = getChecked('cSymptoms');
+    const triggers = getChecked('cTriggers');
+
+    let durationMinutes = 0;
+    if (startTime && endTime) {
+        const [h1, m1] = startTime.split(':').map(Number);
+        const [h2, m2] = endTime.split(':').map(Number);
+        durationMinutes = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (durationMinutes < 0) durationMinutes += 24 * 60;
+    }
+
+    const crisisData = {
+        id: 'c-' + Date.now(),
+        date,
+        startTime,
+        endTime,
+        durationMinutes,
+        intensity: Number(intensity),
+        painTypes,
+        locations,
+        symptoms,
+        preventiveTook: document.getElementById('cPreventiveTook').value,
+        preventiveMed: document.getElementById('cPrevMed').value,
+        preventiveDose: document.getElementById('cPrevDose').value,
+        rescueTook: document.getElementById('cRescueTook').value,
+        rescueMed: document.getElementById('cRescueMed').value,
+        rescueDose: document.getElementById('cRescueDose').value,
+        rescueTime: document.getElementById('cRescueTime').value,
+        rescueResult: document.getElementById('cRescueResult').value,
+        triggers,
+        sleepHours: Number(document.getElementById('cSleep').value || 7),
+        waterLitres: Number(document.getElementById('cWater').value || 2),
+        caffeineCups: Number(document.getElementById('cCaffeine').value || 1),
+        exercise: document.getElementById('cExercise').value
+    };
+
+    window.appState.crises.unshift(crisisData);
+    savePersistentData();
+
+    closeModal('modalNewCrisis');
+    renderAllViews();
+    showToast("Crise registrada e salva com sucesso!");
+};
+
+window.savePainFree = function(e) {
+    e.preventDefault();
+
+    const data = {
+        id: 'pf-' + Date.now(),
+        date: document.getElementById('pfDate').value,
+        sleepWell: document.getElementById('pfSleepWell').value,
+        sleepHours: Number(document.getElementById('pfSleepHours').value || 8),
+        preventive: document.getElementById('pfPreventive').value,
+        exercise: document.getElementById('pfExercise').value,
+        stress: document.getElementById('pfStress').value,
+        water: Number(document.getElementById('pfWater').value || 2.0)
+    };
+
+    window.appState.painFreeDays.unshift(data);
+    savePersistentData();
+
+    closeModal('modalPainFree');
+    renderAllViews();
+    showToast("Dia sem dor registrado e salvo!");
+};
+
+window.saveProfile = function(e) {
+    e.preventDefault();
+    window.appState.profile = {
+        name: document.getElementById('profName').value,
+        age: document.getElementById('profAge').value,
+        gender: document.getElementById('profGender').value,
+        weight: document.getElementById('profWeight').value,
+        height: document.getElementById('profHeight').value,
+        diagnosis: document.getElementById('profDiagnosis').value,
+        doctor: document.getElementById('profDoctor').value,
+        meds: document.getElementById('profMeds').value
+    };
+    savePersistentData();
+    showToast("Perfil do paciente salvo com sucesso!");
+};
+
+// UI Helpers
+window.calculateCrisisDuration = function() {
+    const startTime = document.getElementById('cStartTime').value;
+    const endTime = document.getElementById('cEndTime').value;
+    const label = document.getElementById('cDurationCalculated');
+
+    if (startTime && endTime) {
+        const [h1, m1] = startTime.split(':').map(Number);
+        const [h2, m2] = endTime.split(':').map(Number);
+        let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (diff < 0) diff += 24 * 60;
+
+        const hrs = Math.floor(diff / 60);
+        const mins = diff % 60;
+        label.innerText = `${hrs}h ${mins}min`;
+    } else {
+        label.innerText = '-- h -- min';
+    }
+};
+
+window.updateIntensityBadge = function(val) {
+    const badge = document.getElementById('cIntensityBadge');
+    badge.innerText = `${val} - ${val <= 3 ? 'Leve' : val <= 6 ? 'Moderada' : val <= 8 ? 'Forte' : 'Severa'}`;
+    badge.className = `text-xs font-bold px-3 py-1 rounded-full text-white ${val <= 3 ? 'bg-amber-500' : val <= 6 ? 'bg-orange-500' : 'bg-rose-600'}`;
+};
+
+window.togglePreventiveFields = function() {
+    const took = document.getElementById('cPreventiveTook').value;
+    document.getElementById('preventiveFields').classList.toggle('hidden', took !== 'Sim');
+};
+
+window.toggleRescueFields = function() {
+    const took = document.getElementById('cRescueTook').value;
+    document.getElementById('rescueFields').classList.toggle('hidden', took !== 'Sim');
+};
+
+// Navigation
+window.switchTab = function(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('active', 'border-indigo-600', 'text-indigo-600');
+        el.classList.add('border-transparent', 'text-slate-600');
+    });
+
+    document.getElementById(`view-${tabName}`).classList.remove('hidden');
+    const activeBtn = document.getElementById(`tab-${tabName}`);
+    activeBtn.classList.add('active', 'border-indigo-600', 'text-indigo-600');
+    activeBtn.classList.remove('border-transparent', 'text-slate-600');
+};
+
+window.openModal = function(id) {
+    document.getElementById(id)?.classList.remove('hidden');
+};
+
+window.closeModal = function(id) {
+    document.getElementById(id)?.classList.add('hidden');
+};
+
+window.showToast = function(msg) {
+    const toast = document.getElementById('toastNotification');
+    document.getElementById('toastMessage').innerText = msg;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+    }, 3000);
+};
+
+// Export Functions
+window.exportCSV = function() {
+    const crises = window.appState.crises;
+    let csv = "Data,Inicio,Termino,Intensidade,DuracaoMin,RemedioResgate,Resultado,Gatilhos\n";
+
+    crises.forEach(c => {
+        csv += `"${c.date}","${c.startTime || ''}","${c.endTime || ''}",${c.intensity},${c.durationMinutes || 0},"${c.rescueMed || ''}","${c.rescueResult || ''}","${(c.triggers || []).join('; ')}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Relatorio_Enxaqueca_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.printClinicalReport = function() {
+    window.print();
+};
+</script>
+
+</body>
+</html>
